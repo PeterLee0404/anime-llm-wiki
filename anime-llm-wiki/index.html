@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>動漫介紹 LLM Wiki｜作品與知識庫展示</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <style>
+    :root {
+      --bg-paper: #FAF7F2;
+      --bg-card: #FFFFFF;
+      --bg-subtle: #F3EDE3;
+      --border-hairline: #E4DDD3;
+      --text-ink: #1E242B;
+      --text-muted: #5A6572;
+      --accent-frieren: #2D6A4F;
+      --accent-stone: #B45309;
+      --accent-primary: #2D6A4F;
+    }
+
+    body {
+      background-color: var(--bg-paper);
+      color: var(--text-ink);
+      font-family: "Inter", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, -apple-system, sans-serif;
+      line-height: 1.65;
+    }
+
+    .serif-title {
+      font-family: "Noto Serif TC", "Songti TC", "PMingLiU", Georgia, serif;
+    }
+
+    .hairline {
+      border-color: var(--border-hairline);
+    }
+
+    .magazine-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-hairline);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+
+    .magazine-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 26px -10px rgba(30, 36, 43, 0.12);
+      border-color: #C9BFAE;
+    }
+
+    .wikilink-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.15rem 0.55rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      background-color: var(--bg-subtle);
+      color: var(--text-ink);
+      border: 1px solid var(--border-hairline);
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .wikilink-chip:hover {
+      background-color: #E8DFD1;
+      border-color: #B8AC99;
+    }
+
+    .tab-btn {
+      position: relative;
+      padding: 0.6rem 0.9rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      border-radius: 0.5rem;
+      transition: color 0.15s ease, background-color 0.15s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-ink);
+      background-color: var(--bg-subtle);
+    }
+
+    .tab-btn.active {
+      color: var(--text-ink);
+      background-color: #FFFFFF;
+      box-shadow: 0 1px 3px rgba(30, 36, 43, 0.08);
+      border: 1px solid var(--border-hairline);
+    }
+
+    .spoiler-box[open] summary {
+      border-bottom: 1px solid #F3D9B1;
+    }
+
+    math {
+      font-family: "Cambria Math", "Latin Modern Math", "STIX Two Math", serif;
+      font-size: 1.02em;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="border-b hairline bg-[#FAF7F2]/95 backdrop-blur sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2 text-xs uppercase tracking-widest text-[#5A6572] font-semibold">
+            <span>LLM Wiki Knowledge Base</span>
+            <span>·</span>
+            <span>AGENTS.md Schema</span>
+          </div>
+          <h1 class="serif-title text-2xl sm:text-3xl font-bold tracking-tight text-[#1E242B]">
+            動漫介紹 LLM Wiki
+          </h1>
+        </div>
+      </div>
+
+      <!-- Single-row Navigation Tabs -->
+      <nav aria-label="Wiki 導覽分頁" class="flex flex-wrap items-center gap-1.5 bg-[#F3EDE3] p-1 rounded-xl border hairline">
+        <button type="button" class="tab-btn active" data-tab="works">作品總覽</button>
+        <button type="button" class="tab-btn" data-tab="creators">創作者與公司</button>
+        <button type="button" class="tab-btn" data-tab="themes">題材與母題</button>
+        <button type="button" class="tab-btn" data-tab="indexlog">索引與日誌</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+    <!-- Top Stats & Search Bar -->
+    <section class="mb-7 grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+      <div class="lg:col-span-7 flex flex-wrap gap-2.5" id="statsStrip">
+        <!-- Populated by JS -->
+      </div>
+      <div class="lg:col-span-5">
+        <div class="relative">
+          <input
+            id="searchInput"
+            type="search"
+            placeholder="搜尋作品、譯名、創作者、製作公司或題材..."
+            class="w-full bg-white border hairline rounded-xl pl-10 pr-4 py-2.5 text-sm text-[#1E242B] placeholder-[#8A94A0] focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/30 focus:border-[#2D6A4F]"
+          />
+          <svg class="w-4 h-4 text-[#8A94A0] absolute left-3.5 top-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab: Works -->
+    <section id="tab-works" class="tab-panel">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div class="flex flex-wrap items-center gap-2" id="themeFilterBar">
+          <!-- Populated by JS -->
+        </div>
+        <span class="text-xs text-[#5A6572]" id="worksCountLabel"></span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="worksGrid">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- Tab: Creators & Studios -->
+    <section id="tab-creators" class="tab-panel hidden">
+      <div class="mb-4 flex items-center justify-between">
+        <p class="text-sm text-[#5A6572]">點擊任一創作者或動畫製作公司，可檢視其於 Wiki 內收錄的關聯作品。</p>
+        <span class="text-xs text-[#5A6572]" id="creatorsCountLabel"></span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="creatorsGrid">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- Tab: Themes -->
+    <section id="tab-themes" class="tab-panel hidden">
+      <div class="mb-4 flex items-center justify-between">
+        <p class="text-sm text-[#5A6572]">整理作品背後的核心題材、敘事母題與跨作品脈絡。</p>
+        <span class="text-xs text-[#5A6572]" id="themesCountLabel"></span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5" id="themesGrid">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- Tab: Index & Log -->
+    <section id="tab-indexlog" class="tab-panel hidden space-y-6">
+      <div class="magazine-card rounded-2xl p-6">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b hairline">
+          <div>
+            <span class="text-xs uppercase tracking-wider text-[#5A6572] font-semibold">index.md</span>
+            <h2 class="serif-title text-xl font-bold">Wiki 知識庫總目錄</h2>
+          </div>
+          <span class="text-xs px-2.5 py-1 rounded-full bg-[#F3EDE3] text-[#5A6572]">內容導向索引</span>
+        </div>
+        <div id="indexCatalog" class="space-y-5 text-sm">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <div class="magazine-card rounded-2xl p-6">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b hairline">
+          <div>
+            <span class="text-xs uppercase tracking-wider text-[#5A6572] font-semibold">log.md</span>
+            <h2 class="serif-title text-xl font-bold">時間軸操作日誌（Append-Only）</h2>
+          </div>
+          <span class="text-xs px-2.5 py-1 rounded-full bg-[#F3EDE3] text-[#5A6572]">2026-11-16</span>
+        </div>
+        <div id="logTimeline" class="space-y-4">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Work Detail Modal -->
+  <div id="workModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#1E242B]/45 backdrop-blur-xs p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="bg-[#FAF7F2] border hairline rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div class="sticky top-0 z-10 bg-[#FAF7F2]/95 backdrop-blur border-b hairline px-5 sm:px-7 py-4 flex items-start justify-between gap-4">
+        <div>
+          <div class="flex flex-wrap items-center gap-2 text-xs text-[#5A6572] mb-1" id="modalMetaTop"></div>
+          <h2 id="modalTitle" class="serif-title text-2xl font-bold text-[#1E242B]"></h2>
+        </div>
+        <button id="closeModalBtn" type="button" class="px-3 py-1.5 rounded-lg bg-white border hairline text-sm font-medium text-[#5A6572] hover:text-[#1E242B] hover:bg-[#F3EDE3]">
+          關閉
+        </button>
+      </div>
+      <div id="modalBody" class="px-5 sm:px-7 py-6 space-y-6 text-sm sm:text-[15px]">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t hairline bg-[#F3EDE3]/60 py-4 px-4 sm:px-6 text-xs text-[#5A6572]">
+    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <span>動漫介紹 LLM Wiki · 依 <code class="px-1.5 py-0.5 bg-white border hairline rounded">AGENTS.md</code> 淺色雜誌風規範建置</span>
+      <span>資料來源嚴格限定於 <code class="px-1.5 py-0.5 bg-white border hairline rounded">wiki/</code> 既有收錄條目</span>
+    </div>
+  </footer>
+
+  <script>
+    // Grounded Wiki Dataset (strictly matching wiki/, index.md, log.md)
+    const WIKI_DATA = {
+      works: [
+        {
+          id: "frieren",
+          title: "葬送的芙莉蓮",
+          aliases: ["葬送のフリーレン", "Frieren"],
+          year: "2023–2026",
+          premiere: "2023 年 9 月 29 日",
+          studio: "MADHOUSE",
+          directors: ["齋藤圭一郎（第1季）", "北川朋哉（第2季）"],
+          directorIds: ["齋藤圭一郎", "北川朋哉"],
+          creators: [
+            { name: "山田鐘人", role: "原作" },
+            { name: "阿部司", role: "作畫" }
+          ],
+          seasons: [
+            { label: "第 1 季", period: "2023–2024 年", episodes: "共 28 集", director: "齋藤圭一郎" },
+            { label: "第 2 季", period: "2026 年", episodes: "共 12 集", director: "北川朋哉" }
+          ],
+          themes: ["奇幻冒險", "生命與時間"],
+          watchStatus: "想看",
+          sourcesCount: 3,
+          updated: "2026-11-16",
+          accent: "#2D6A4F",
+          accentBg: "#EAF3EE",
+          oneLiner: "以「打倒魔王之後」為起點，描寫長壽精靈魔法使在夥伴老去逝世後，重新踏上旅程去認識人類與生命意義的溫柔奇幻故事。",
+          synopsis: "在存在魔法與奇幻生物的世界中，人類勇者欣梅爾、矮人戰士艾冉、人類僧侶海塔與精靈魔法使芙莉蓮結束了長達十年的討伐魔王之旅，凱旋返回王都並約定五十年後再聚共賞流星雨。對長壽的芙莉蓮而言，五十年轉瞬即逝；然而當她履約重返王都時，昔日夥伴皆已老去，欣梅爾也在重逢賞雨不久後壽終正寢。欣梅爾的離世讓芙莉蓮懊悔未能趁他在世時更加了解他，她找到師傅弗蘭梅於千年前留下的真跡筆記與指引，與海塔託孤的魔法使費倫、艾冉的徒弟修塔爾克組成三人小隊，重歷當年征伐路線，前往大陸最北方魔王城遺址的「靈魂長眠之地」。",
+          highlights: [
+            "反轉傳統王道開局：將故事重心放在「打倒魔王之後」的餘韻與回憶，而非單純的熱血討伐過程。",
+            "細膩的情感與時間感：透過精靈與人類截然不同的壽命尺度，刻畫「了解他人」與「追憶」的重量。",
+            "世代傳承的旅伴關係：新隊伍成員費倫與修塔爾克分別承接自昔日夥伴海塔與艾冉，延續跨世代的羈絆。"
+          ],
+          spoilerNote: "目前僅匯入故事開端簡介與基本製作資訊，後續可補充各篇章劇情細節、角色弧光與製作訪談解析。",
+          sources: [
+            "來源-葬送的芙莉蓮故事簡介",
+            "來源-葬送的芙莉蓮播映與製作資訊",
+            "來源-葬送的芙莉蓮各季導演與集數"
+          ],
+          formulaLabel: "時間尺度落差概念",
+          formulaHtml: `
+            <math display="inline">
+              <mrow>
+                <mi>Δ</mi><msub><mi>t</mi><mtext>精靈體感</mtext></msub>
+                <mo>≪</mo>
+                <mi>Δ</mi><msub><mi>t</mi><mtext>人類壽命</mtext></msub>
+                <mspace width="0.6em"/>
+                <mo>(</mo><mn>50</mn><mtext> 年流星雨之約</mtext><mo>)</mo>
+              </mrow>
+            </math>
+          `
+        },
+        {
+          id: "drstone",
+          title: "Dr.STONE 新石紀",
+          aliases: ["Dr.STONE", "新石紀"],
+          year: "2019–",
+          premiere: "2019 年 7 月 5 日",
+          studio: "【Wiki 尚無資料，待補充】",
+          directors: ["【Wiki 尚無資料，待補充】"],
+          directorIds: [],
+          creators: [
+            { name: "稻垣理一郎", role: "原作" },
+            { name: "Boichi", role: "作畫" }
+          ],
+          seasons: [
+            { label: "第 1 季", period: "2019 年起", episodes: "全 24 話", director: "待補充" },
+            { label: "第 2 季", period: "—", episodes: "全 11 話", director: "待補充" },
+            { label: "特別篇（龍水）", period: "—", episodes: "全 1 話", director: "待補充" },
+            { label: "第 3 季", period: "—", episodes: "全 22 話", director: "待補充" },
+            { label: "第 4 季", period: "—", episodes: "全 37 話", director: "待補充" }
+          ],
+          themes: ["科學題材", "文明重建"],
+          watchStatus: "想看",
+          sourcesCount: 1,
+          updated: "2026-11-16",
+          accent: "#B45309",
+          accentBg: "#FDF3E7",
+          oneLiner: "全人類石化 3,700 年後，天才高中生石神千空從石器時代重新攀爬 200 萬年科技樹，充滿邏輯、熱血與工科浪漫的少年科學冒險。",
+          synopsis: "某天，地球被一道神秘的綠色光線照射，全人類與燕子瞬間被石化成毫無知覺的石頭。歷經 3,700 年後，具備超凡頭腦與豐富科學知識的高中生石神千空在石穴中「破石甦醒」，面對已倒退回原始荒野的世界，他隨後解救了擁有極佳體力的好友大木大樹，並透過實驗調配出能解除石化的「復活液（硝酸＋酒精）」，立志從零開始重建落後 200 萬年的現代科學文明，拯救全人類。",
+          highlights: [
+            "紮實的科技樹攀爬：從打火、製陶、冶鐵、發電機一路推進至手機、汽車與航空器，細緻呈現人類科學史的演進過程。",
+            "熱血與工科浪漫：核心精神在於「全人類用科學解開石化、重啟文明」，將理工知識與實驗試錯轉化為高張力的少年漫畫節奏。",
+            "適合觀眾：喜愛硬核科普、文明發展史、動腦解謎與熱血團隊合作的觀眾。"
+          ],
+          spoilerNote: "目前僅匯入基本設定與大綱，後續可補充各季度篇章解析、石化之謎真相與科學考據細節。",
+          sources: ["來源-Dr.STONE新石紀作品介紹"],
+          formulaLabel: "復活液核心配方（Wiki 設定）",
+          formulaHtml: `
+            <math display="inline">
+              <mrow>
+                <mtext>復活液</mtext>
+                <mo>=</mo>
+                <msub><mtext>HNO</mtext><mn>3</mn></msub>
+                <mtext>（硝酸）</mtext>
+                <mo>+</mo>
+                <msub><mtext>C</mtext><mn>2</mn></msub><msub><mtext>H</mtext><mn>5</mn></msub><mtext>OH</mtext>
+                <mtext>（酒精）</mtext>
+              </mrow>
+            </math>
+          `
+        }
+      ],
+      creators: [
+        {
+          name: "MADHOUSE",
+          type: "動畫製作公司",
+          aliases: ["マッドハウス", "瘋房子"],
+          roles: ["動畫製作公司"],
+          summary: "日本動畫製作公司，負責製作《葬送的芙莉蓮》電視動畫（詳細社史與演出風格尚待後續來源補充）。",
+          works: [{ id: "frieren", title: "葬送的芙莉蓮", note: "動畫製作／第 1 季 2023–2024 共 28 集、第 2 季 2026 共 12 集" }],
+          sources: ["來源-葬送的芙莉蓮播映與製作資訊", "來源-葬送的芙莉蓮各季導演與集數"]
+        },
+        {
+          name: "齋藤圭一郎",
+          type: "創作者",
+          aliases: ["斎藤圭一郎"],
+          roles: ["監督", "導演"],
+          summary: "日本動畫導演，執導《葬送的芙莉蓮》第 1 季（更多演出風格與過往作品尚待後續來源補充）。",
+          works: [{ id: "frieren", title: "葬送的芙莉蓮", note: "第 1 季導演／2023–2024，共 28 集" }],
+          sources: ["來源-葬送的芙莉蓮各季導演與集數"]
+        },
+        {
+          name: "北川朋哉",
+          type: "創作者",
+          aliases: ["北川朋哉"],
+          roles: ["監督", "導演"],
+          summary: "日本動畫導演，接棒執導《葬送的芙莉蓮》第 2 季（更多演出風格與過往作品尚待後續來源補充）。",
+          works: [{ id: "frieren", title: "葬送的芙莉蓮", note: "第 2 季導演／2026，共 12 集" }],
+          sources: ["來源-葬送的芙莉蓮各季導演與集數"]
+        },
+        {
+          name: "山田鐘人",
+          type: "創作者",
+          aliases: ["山田鐘人"],
+          roles: ["原作"],
+          summary: "負責《葬送的芙莉蓮》原作故事構思（更多生平與其他作品尚待後續來源補充）。",
+          works: [{ id: "frieren", title: "葬送的芙莉蓮", note: "原作／2023 動畫化" }],
+          sources: ["來源-葬送的芙莉蓮播映與製作資訊"]
+        },
+        {
+          name: "阿部司",
+          type: "創作者",
+          aliases: ["アベツカサ"],
+          roles: ["作畫"],
+          summary: "負責《葬送的芙莉蓮》原作漫畫作畫（更多畫風特色與其他作品尚待後續來源補充）。",
+          works: [{ id: "frieren", title: "葬送的芙莉蓮", note: "作畫／2023 動畫化" }],
+          sources: ["來源-葬送的芙莉蓮播映與製作資訊"]
+        },
+        {
+          name: "稻垣理一郎",
+          type: "創作者",
+          aliases: ["稲垣理一郎"],
+          roles: ["原作"],
+          summary: "日本漫畫原作者，創作出結合少年熱血與科學史演進的《Dr.STONE 新石紀》（更多生平與其他作品尚待後續來源補充）。",
+          works: [{ id: "drstone", title: "Dr.STONE 新石紀", note: "原作／2019 動畫化" }],
+          sources: ["來源-Dr.STONE新石紀作品介紹"]
+        },
+        {
+          name: "Boichi",
+          type: "創作者",
+          aliases: ["Boichi"],
+          roles: ["作畫"],
+          summary: "負責《Dr.STONE 新石紀》漫畫作畫（更多畫風特色與其他作品尚待後續來源補充）。",
+          works: [{ id: "drstone", title: "Dr.STONE 新石紀", note: "作畫／2019 動畫化" }],
+          sources: ["來源-Dr.STONE新石紀作品介紹"]
+        }
+      ],
+      themes: [
+        {
+          name: "奇幻冒險",
+          aliases: ["Fantasy Adventure", "劍與魔法"],
+          definition: "以魔法、奇幻生物、勇者討伐魔王等架空世界觀為舞台，描寫角色在旅途中克服挑戰、建立羈絆與成長的敘事類型。",
+          works: [{ id: "frieren", title: "葬送的芙莉蓮", note: "跳脫「打倒魔王即結局」的傳統公式，將視角轉向討伐結束後的餘生與重走舊路的心境變化。" }]
+        },
+        {
+          name: "生命與時間",
+          aliases: ["壽命論", "時間感落差"],
+          definition: "探討不同種族或存在之間因壽命長短差異而產生的時間感落差、離別、懊悔，以及如何面對有限生命與追憶過往的母題。",
+          works: [{ id: "frieren", title: "葬送的芙莉蓮", note: "透過長壽精靈「五十年轉瞬即逝」與人類「生老病死」的強烈對比，驅動主角從漠不關心轉向主動理解人類。" }]
+        },
+        {
+          name: "科學題材",
+          aliases: ["科普動畫", "工科浪漫"],
+          definition: "以物理、化學、工程與實驗邏輯作為核心敘事推力，將科學原理轉化為解決問題與推動劇情的關鍵手段。",
+          works: [{ id: "drstone", title: "Dr.STONE 新石紀", note: "透過「硝酸＋酒精」復活液與逐步點亮科技樹的過程，將科學史演進融入熱血少年冒險。" }]
+        },
+        {
+          name: "文明重建",
+          aliases: ["科技樹", "末日後重建"],
+          definition: "描寫人類社會在崩壞或倒退回原始狀態後，如何憑藉知識、分工與資源整合重新建立技術與文明秩序的敘事母題。",
+          works: [{ id: "drstone", title: "Dr.STONE 新石紀", note: "從石器時代出發，依序重建打火、製陶、冶鐵、電力、通訊與交通工具，展現跨越 200 萬年文明差距的過程。" }]
+        }
+      ],
+      sources: [
+        { name: "來源-葬送的芙莉蓮故事簡介", summary: "彙整《葬送的芙莉蓮》故事開端、主要角色關係與前往靈魂長眠之地的主線動機", date: "2026-11-16" },
+        { name: "來源-葬送的芙莉蓮播映與製作資訊", summary: "補充《葬送的芙莉蓮》2023 年 9 月 29 日播映時間、原作與製作公司資訊", date: "2026-11-16" },
+        { name: "來源-葬送的芙莉蓮各季導演與集數", summary: "補充《葬送的芙莉蓮》第 1、2 季導演（齋藤圭一郎、北川朋哉）與集數（28 集、12 集）", date: "2026-11-16" },
+        { name: "來源-Dr.STONE新石紀作品介紹", summary: "彙整《Dr.STONE 新石紀》原作者、開播日、各季話數與科學重建文明大綱", date: "2026-11-16" }
+      ],
+      logs: [
+        { date: "2026-11-16", op: "init", title: "定案 HTML 簡報風格（淺色雜誌風）與進階互動規格", details: ["更新 AGENTS.md：確定 HTML 簡報採淺色雜誌風、16:9 畫布、離線 MathML 渲染，並保留總覽網格、全螢幕、講者備忘錄與一鍵下載 .md 文獻按鈕。"] },
+        { date: "2026-11-16", op: "ingest", title: "匯入《Dr.STONE 新石紀》作品介紹", details: ["保存原始文章至 raw/articles/。", "新建作品頁 Dr.STONE 新石紀.md、創作者頁 稻垣理一郎.md 與 Boichi.md、題材頁 科學題材.md 與 文明重建.md。"] },
+        { date: "2026-11-16", op: "ingest", title: "補充《葬送的芙莉蓮》第 1、2 季導演與集數", details: ["保存原始筆記至 raw/notes/。", "新建導演條目 齋藤圭一郎.md 與 北川朋哉.md，更新作品頁與 MADHOUSE.md。"] },
+        { date: "2026-11-16", op: "ingest", title: "補充《葬送的芙莉蓮》播映年份與製作團隊", details: ["新建 MADHOUSE.md、山田鐘人.md、阿部司.md 條目並更新作品頁。"] },
+        { date: "2026-11-16", op: "ingest", title: "匯入《葬送的芙莉蓮》故事簡介", details: ["建立第一筆作品條目 葬送的芙莉蓮.md、題材頁 奇幻冒險.md 與 生命與時間.md。"] },
+        { date: "2026-11-16", op: "init", title: "建立動漫 LLM Wiki 初始架構", details: ["建立 AGENTS.md 規範文件、index.md、log.md、raw/、wiki/ 與 templates/ 目錄。"] }
+      ]
+    };
+
+    // State
+    let activeTab = "works";
+    let searchQuery = "";
+    let activeThemeFilter = "全部";
+
+    // Inline SVG Editorial Motifs
+    function getWorkSvg(workId) {
+      if (workId === "frieren") {
+        return `
+          <svg viewBox="0 0 120 80" class="w-24 h-16 shrink-0" aria-hidden="true">
+            <rect width="120" height="80" rx="10" fill="#EAF3EE" />
+            <circle cx="92" cy="22" r="10" fill="#D8EFE3" />
+            <path d="M26 62 L62 18" stroke="#2D6A4F" stroke-width="3" stroke-linecap="round" />
+            <circle cx="66" cy="15" r="5" fill="#D97706" />
+            <path d="M18 24 L20 29 L25 31 L20 33 L18 38 L16 33 L11 31 L16 29 Z" fill="#2D6A4F" opacity="0.65" />
+            <path d="M95 50 L96.5 53.5 L100 55 L96.5 56.5 L95 60 L93.5 56.5 L90 55 L93.5 53.5 Z" fill="#2D6A4F" opacity="0.5" />
+          </svg>
+        `;
+      }
+      return `
+        <svg viewBox="0 0 120 80" class="w-24 h-16 shrink-0" aria-hidden="true">
+          <rect width="120" height="80" rx="10" fill="#FDF3E7" />
+          <path d="M52 16 H68 V28 L82 58 A6 6 0 0 1 76 66 H44 A6 6 0 0 1 38 58 L52 28 Z" fill="#FFFFFF" stroke="#B45309" stroke-width="2.5" />
+          <path d="M44 52 H76 L79 59 A3 3 0 0 1 76 63 H44 A3 3 0 0 1 41 59 Z" fill="#F59E0B" opacity="0.45" />
+          <circle cx="24" cy="24" r="6" fill="#FDE68A" />
+          <path d="M96 20 L90 32 H98 L92 44" stroke="#B45309" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      `;
+    }
+
+    function renderStats() {
+      const stats = [
+        { label: "收錄作品", value: WIKI_DATA.works.length },
+        { label: "創作者／公司", value: WIKI_DATA.creators.length },
+        { label: "題材母題", value: WIKI_DATA.themes.length },
+        { label: "來源摘要", value: WIKI_DATA.sources.length }
+      ];
+      document.getElementById("statsStrip").innerHTML = stats.map(s => `
+        <div class="bg-white border hairline rounded-xl px-3.5 py-2 flex items-baseline gap-2">
+          <span class="serif-title text-lg font-bold text-[#1E242B]">${s.value}</span>
+          <span class="text-xs text-[#5A6572]">${s.label}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderThemeFilterBar() {
+      const options = ["全部", ...WIKI_DATA.themes.map(t => t.name)];
+      document.getElementById("themeFilterBar").innerHTML = options.map(opt => {
+        const isActive = opt === activeThemeFilter;
+        return `
+          <button
+            type="button"
+            data-theme-filter="${opt}"
+            class="px-3 py-1.5 rounded-full text-xs font-medium border transition ${
+              isActive
+                ? "bg-[#1E242B] text-white border-[#1E242B]"
+                : "bg-white text-[#5A6572] hairline hover:bg-[#F3EDE3] hover:text-[#1E242B]"
+            }"
+          >${opt}</button>
+        `;
+      }).join("");
+    }
+
+    function matchesQuery(text) {
+      if (!searchQuery.trim()) return true;
+      return text.toLowerCase().includes(searchQuery.trim().toLowerCase());
+    }
+
+    function renderWorks() {
+      const filtered = WIKI_DATA.works.filter(w => {
+        const themeMatch = activeThemeFilter === "全部" || w.themes.includes(activeThemeFilter);
+        const searchBlob = [
+          w.title,
+          ...w.aliases,
+          w.studio,
+          ...w.directors,
+          ...w.creators.map(c => c.name),
+          ...w.themes,
+          w.oneLiner
+        ].join(" ");
+        return themeMatch && matchesQuery(searchBlob);
+      });
+
+      document.getElementById("worksCountLabel").textContent = `顯示 ${filtered.length} / ${WIKI_DATA.works.length} 部作品`;
+
+      if (filtered.length === 0) {
+        document.getElementById("worksGrid").innerHTML = `
+          <div class="md:col-span-2 magazine-card rounded-2xl p-8 text-center text-[#5A6572]">
+            找不到符合「${searchQuery}」的作品條目，請嘗試其他關鍵字或重設題材篩選。
+          </div>
+        `;
+        return;
+      }
+
+      document.getElementById("worksGrid").innerHTML = filtered.map(w => `
+        <article class="magazine-card rounded-2xl p-6 flex flex-col justify-between gap-4">
+          <div>
+            <div class="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <div class="flex flex-wrap items-center gap-2 text-xs text-[#5A6572] mb-1">
+                  <span class="px-2 py-0.5 rounded-full font-medium" style="background:${w.accentBg}; color:${w.accent};">${w.premiere}</span>
+                  <span>來源數：${w.sourcesCount}</span>
+                </div>
+                <h2 class="serif-title text-2xl font-bold text-[#1E242B]">${w.title}</h2>
+                <p class="text-xs text-[#5A6572] mt-0.5">${w.aliases.join(" · ")}</p>
+              </div>
+              ${getWorkSvg(w.id)}
+            </div>
+
+            <p class="text-sm text-[#323A44] mb-4">${w.oneLiner}</p>
+
+            <div class="grid grid-cols-2 gap-2.5 text-xs bg-[#FAF7F2] border hairline rounded-xl p-3 mb-4">
+              <div>
+                <span class="text-[#5A6572] block">原作團隊</span>
+                <span class="font-medium text-[#1E242B]">${w.creators.map(c => c.name).join("、")}</span>
+              </div>
+              <div>
+                <span class="text-[#5A6572] block">動畫製作</span>
+                <span class="font-medium text-[#1E242B]">${w.studio}</span>
+              </div>
+              <div class="col-span-2">
+                <span class="text-[#5A6572] block">季度與集數</span>
+                <span class="font-medium text-[#1E242B]">${w.seasons.map(s => `${s.label}（${s.episodes}）`).join("、")}</span>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-1.5">
+              ${w.themes.map(t => `<button type="button" class="wikilink-chip" data-jump-theme="${t}">[[${t}]]</button>`).join("")}
+            </div>
+          </div>
+
+          <div class="pt-3 border-t hairline flex items-center justify-between">
+            <span class="text-xs text-[#5A6572]">更新：${w.updated}</span>
+            <button type="button" data-open-work="${w.id}" class="px-4 py-2 rounded-xl text-xs font-semibold text-white transition hover:opacity-90" style="background:${w.accent};">
+              閱讀完整 Wiki 條目 →
+            </button>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function renderCreators() {
+      const filtered = WIKI_DATA.creators.filter(c => {
+        const blob = [c.name, ...c.aliases, ...c.roles, c.summary, ...c.works.map(w => w.title)].join(" ");
+        return matchesQuery(blob);
+      });
+      document.getElementById("creatorsCountLabel").textContent = `共 ${filtered.length} 筆創作者／公司`;
+
+      document.getElementById("creatorsGrid").innerHTML = filtered.map(c => `
+        <article class="magazine-card rounded-2xl p-5 flex flex-col justify-between gap-3">
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-1.5">
+              <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#F3EDE3] text-[#5A6572]">${c.roles.join(" / ")}</span>
+              <span class="text-[11px] text-[#8A94A0]">${c.type}</span>
+            </div>
+            <h3 class="serif-title text-lg font-bold text-[#1E242B]">${c.name}</h3>
+            <p class="text-xs text-[#8A94A0] mb-2">${c.aliases.join(" · ")}</p>
+            <p class="text-xs sm:text-sm text-[#323A44]">${c.summary}</p>
+          </div>
+          <div class="pt-3 border-t hairline space-y-1.5">
+            <span class="text-[11px] text-[#5A6572] block">關聯作品：</span>
+            ${c.works.map(w => `
+              <button type="button" data-open-work="${w.id}" class="wikilink-chip">[[${w.title}]]</button>
+              <p class="text-[11px] text-[#5A6572] mt-1">${w.note}</p>
+            `).join("")}
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function renderThemes() {
+      const filtered = WIKI_DATA.themes.filter(t => {
+        const blob = [t.name, ...t.aliases, t.definition, ...t.works.map(w => w.title)].join(" ");
+        return matchesQuery(blob);
+      });
+      document.getElementById("themesCountLabel").textContent = `共 ${filtered.length} 個題材母題`;
+
+      document.getElementById("themesGrid").innerHTML = filtered.map(t => `
+        <article class="magazine-card rounded-2xl p-6 flex flex-col justify-between gap-4">
+          <div>
+            <div class="flex flex-wrap items-center gap-2 mb-2">
+              <h3 class="serif-title text-xl font-bold text-[#1E242B]">[[${t.name}]]</h3>
+              <span class="text-xs text-[#5A6572]">${t.aliases.join(" · ")}</span>
+            </div>
+            <p class="text-sm text-[#323A44] mb-4">${t.definition}</p>
+          </div>
+          <div class="pt-3 border-t hairline space-y-2">
+            <span class="text-xs font-semibold text-[#5A6572] block">代表作品與演變</span>
+            ${t.works.map(w => `
+              <div class="bg-[#FAF7F2] border hairline rounded-xl p-3">
+                <button type="button" data-open-work="${w.id}" class="wikilink-chip mb-1.5">[[${w.title}]]</button>
+                <p class="text-xs text-[#323A44]">${w.note}</p>
+              </div>
+            `).join("")}
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function renderIndexAndLog() {
+      document.getElementById("indexCatalog").innerHTML = `
+        <div>
+          <h3 class="font-semibold text-[#1E242B] mb-2">作品（Works）</h3>
+          <ul class="space-y-1.5">
+            ${WIKI_DATA.works.map(w => `
+              <li>
+                <button type="button" data-open-work="${w.id}" class="wikilink-chip mr-1.5">[[${w.title}]]</button>
+                <span class="text-[#323A44]">— ${w.oneLiner}（更新：${w.updated}）</span>
+              </li>
+            `).join("")}
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-semibold text-[#1E242B] mb-2">創作者與製作公司（Creators & Studios）</h3>
+          <ul class="space-y-1.5">
+            ${WIKI_DATA.creators.map(c => `
+              <li>
+                <button type="button" data-jump-creator="${c.name}" class="wikilink-chip mr-1.5">[[${c.name}]]</button>
+                <span class="text-[#323A44]">— ${c.summary}</span>
+              </li>
+            `).join("")}
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-semibold text-[#1E242B] mb-2">題材與風格（Themes）</h3>
+          <ul class="space-y-1.5">
+            ${WIKI_DATA.themes.map(t => `
+              <li>
+                <button type="button" data-jump-theme="${t.name}" class="wikilink-chip mr-1.5">[[${t.name}]]</button>
+                <span class="text-[#323A44]">— ${t.definition}</span>
+              </li>
+            `).join("")}
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-semibold text-[#1E242B] mb-2">來源摘要（Sources）</h3>
+          <ul class="space-y-1.5">
+            ${WIKI_DATA.sources.map(s => `
+              <li class="text-[#323A44]">
+                <span class="font-medium text-[#1E242B]">[[${s.name}]]</span> — ${s.summary}（${s.date}）
+              </li>
+            `).join("")}
+          </ul>
+        </div>
+      `;
+
+      document.getElementById("logTimeline").innerHTML = WIKI_DATA.logs.map(entry => `
+        <div class="border-l-2 border-[#C9BFAE] pl-4 py-0.5">
+          <div class="flex flex-wrap items-center gap-2 mb-1">
+            <span class="text-xs font-mono px-2 py-0.5 rounded bg-[#F3EDE3] text-[#1E242B]">${entry.date}</span>
+            <span class="text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-[#EAF3EE] text-[#2D6A4F]">${entry.op}</span>
+            <h3 class="font-semibold text-sm text-[#1E242B]">${entry.title}</h3>
+          </div>
+          <ul class="list-disc list-inside text-xs text-[#5A6572] space-y-0.5">
+            ${entry.details.map(d => `<li>${d}</li>`).join("")}
+          </ul>
+        </div>
+      `).join("");
+    }
+
+    function openWorkModal(workId) {
+      const w = WIKI_DATA.works.find(item => item.id === workId);
+      if (!w) return;
+
+      document.getElementById("modalMetaTop").innerHTML = `
+        <span class="px-2 py-0.5 rounded-full font-medium" style="background:${w.accentBg}; color:${w.accent};">${w.premiere}</span>
+        <span>${w.aliases.join(" · ")}</span>
+      `;
+      document.getElementById("modalTitle").textContent = w.title;
+
+      document.getElementById("modalBody").innerHTML = `
+        <blockquote class="border-l-4 pl-4 py-1 text-[#323A44] bg-white rounded-r-xl pr-4 py-3 border hairline" style="border-left-color:${w.accent};">
+          <strong class="text-[#1E242B]">一句話介紹（無雷）：</strong>${w.oneLiner}
+        </blockquote>
+
+        <div class="bg-white border hairline rounded-xl p-4 space-y-2.5 text-xs sm:text-sm">
+          <h3 class="font-bold text-[#1E242B] text-sm">基本資訊</h3>
+          <p><span class="text-[#5A6572]">原作團隊：</span>${w.creators.map(c => `<button type="button" class="wikilink-chip" data-jump-creator="${c.name}">[[${c.name}]]</button>（${c.role}）`).join(" ")}</p>
+          <p><span class="text-[#5A6572]">動畫製作：</span>${w.studio.startsWith("【") ? `<span class="text-[#B45309] font-medium">${w.studio}</span>` : `<button type="button" class="wikilink-chip" data-jump-creator="${w.studio}">[[${w.studio}]]</button>`}</p>
+          <div>
+            <span class="text-[#5A6572] block mb-1">季度與集數：</span>
+            <ul class="list-disc list-inside space-y-1 text-[#323A44]">
+              ${w.seasons.map(s => `<li><strong>${s.label}</strong>（${s.period}）：${s.episodes}｜導演：${s.director}</li>`).join("")}
+            </ul>
+          </div>
+          <p><span class="text-[#5A6572]">主要題材：</span>${w.themes.map(t => `<button type="button" class="wikilink-chip" data-jump-theme="${t}">[[${t}]]</button>`).join(" ")}</p>
+        </div>
+
+        <div>
+          <h3 class="serif-title text-lg font-bold text-[#1E242B] mb-2">劇情簡介（無雷）</h3>
+          <p class="text-[#323A44]">${w.synopsis}</p>
+        </div>
+
+        <div class="bg-white border hairline rounded-xl p-4">
+          <span class="text-xs font-semibold text-[#5A6572] block mb-1.5">${w.formulaLabel}（離線 MathML 支援）</span>
+          <div class="text-[#1E242B] overflow-x-auto">${w.formulaHtml}</div>
+        </div>
+
+        <div>
+          <h3 class="serif-title text-lg font-bold text-[#1E242B] mb-2">無雷看點與適合族群</h3>
+          <ul class="list-disc list-inside space-y-1.5 text-[#323A44]">
+            ${w.highlights.map(h => `<li>${h}</li>`).join("")}
+          </ul>
+        </div>
+
+        <details class="spoiler-box bg-[#FDF6EC] border border-[#F3D9B1] rounded-xl overflow-hidden">
+          <summary class="px-4 py-3 text-sm font-semibold text-[#92400E] cursor-pointer select-none">
+            ⚠️ 劇透解析與深度討論（點擊展開）
+          </summary>
+          <div class="px-4 py-3 text-sm text-[#78350F]">
+            ${w.spoilerNote}
+          </div>
+        </details>
+
+        <div class="pt-3 border-t hairline text-xs text-[#5A6572]">
+          <span class="font-semibold text-[#1E242B]">資料來源：</span>
+          ${w.sources.map(src => `<span class="inline-block bg-white border hairline rounded px-2 py-0.5 mr-1 mb-1">[[${src}]]</span>`).join("")}
+        </div>
+      `;
+
+      const modal = document.getElementById("workModal");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+
+    function closeWorkModal() {
+      const modal = document.getElementById("workModal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+
+    function switchTab(tabName) {
+      activeTab = tabName;
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === tabName);
+      });
+      document.querySelectorAll(".tab-panel").forEach(panel => {
+        panel.classList.toggle("hidden", panel.id !== `tab-${tabName}`);
+      });
+    }
+
+    function renderAll() {
+      renderStats();
+      renderThemeFilterBar();
+      renderWorks();
+      renderCreators();
+      renderThemes();
+      renderIndexAndLog();
+    }
+
+    // Event Delegation
+    document.addEventListener("click", (e) => {
+      const tabBtn = e.target.closest("[data-tab]");
+      if (tabBtn) {
+        switchTab(tabBtn.dataset.tab);
+        return;
+      }
+
+      const themeFilterBtn = e.target.closest("[data-theme-filter]");
+      if (themeFilterBtn) {
+        activeThemeFilter = themeFilterBtn.dataset.themeFilter;
+        renderThemeFilterBar();
+        renderWorks();
+        return;
+      }
+
+      const openWorkBtn = e.target.closest("[data-open-work]");
+      if (openWorkBtn) {
+        openWorkModal(openWorkBtn.dataset.openWork);
+        return;
+      }
+
+      const jumpThemeBtn = e.target.closest("[data-jump-theme]");
+      if (jumpThemeBtn) {
+        closeWorkModal();
+        switchTab("themes");
+        searchQuery = jumpThemeBtn.dataset.jumpTheme;
+        document.getElementById("searchInput").value = searchQuery;
+        renderAll();
+        return;
+      }
+
+      const jumpCreatorBtn = e.target.closest("[data-jump-creator]");
+      if (jumpCreatorBtn) {
+        closeWorkModal();
+        switchTab("creators");
+        searchQuery = jumpCreatorBtn.dataset.jumpCreator;
+        document.getElementById("searchInput").value = searchQuery;
+        renderAll();
+        return;
+      }
+
+      if (e.target.id === "closeModalBtn" || e.target.id === "workModal") {
+        closeWorkModal();
+      }
+    });
+
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      searchQuery = e.target.value;
+      renderWorks();
+      renderCreators();
+      renderThemes();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeWorkModal();
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>
